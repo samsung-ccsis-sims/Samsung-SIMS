@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIMS Web App</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script> 
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-analytics.js"></script> 
+    <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyAqq9sdWYZI6HqrmTTrqyQp7Oflug4pueI",
+  authDomain: "samsung-sims.firebaseapp.com",
+  databaseURL: "https://samsung-sims-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "samsung-sims",
+  storageBucket: "samsung-sims.firebasestorage.app",
+  messagingSenderId: "626155922935",
+  appId: "1:626155922935:web:f26092bd9b2448414e7af2",
+  measurementId: "G-V897G5QD8X"
+    };
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
+
+    // Elements
+    const sensorDataList = document.getElementById("sensor-data-list");
+    const refreshDataBtn = document.getElementById("refreshData");
+
+    // Initialize Realtime Database
+    const database = firebase.database();
+
+    // Fetch Data from Firebase Realtime Database
+    function fetchData() {
+        const ref = database.ref("sensor_data"); // Assuming your data is under "sensor_data"
+        ref.once("value", (snapshot) => {
+            const data = snapshot.val();
+            displaySensorData(data);
+            updateChart(data);
+        });
+    }
+
+    // Display Sensor Data in List
+    function displaySensorData(data) {
+        sensorDataList.innerHTML = ""; // Clear existing data
+        for (const key in data) {
+            const li = document.createElement("li");
+            li.textContent = `${key}: ${JSON.stringify(data[key])}`;
+            li.className = "list-group-item";
+            sensorDataList.appendChild(li);
+        }
+    }
+
+    // Update Temperature Chart
+    function updateChart(data) {
+        const timestamps = [];
+        const temperatures = [];
+
+        for (const key in data) {
+            timestamps.push(key);
+            temperatures.push(data[key].temperature);
+        }
+
+        const ctx = document.getElementById("tempChart").getContext("2d");
+        new Chart(ctx, {
+            type: "line",
+            data: {
+                labels: timestamps,
+                datasets: [{
+                    label: "Temperature (°C)",
+                    data: temperatures,
+                    borderColor: "rgba(75, 192, 192, 1)",
+                    backgroundColor: "rgba(75, 192, 192, 0.2)",
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: { title: { display: true, text: "Time" } },
+                    y: { title: { display: true, text: "Temperature (°C)" } }
+                }
+            }
+        });
+    }
+
+    // Event Listener for Refresh Button
+    refreshDataBtn.addEventListener("click", fetchData);
+
+    // Initial Data Fetch
+    fetchData();
+    </script>
+</head>
+
+<body>
+    <div class="container py-5">
+        <h1 class="text-center">SIMS: Smart Infrastructure Monitoring System</h1>
+        <p class="text-center">Sensor Data</p>
+
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <h3>Distance Data</h3>
+                <ul id="sensor-data-list" class="list-group">
+                    <!-- Sensor data will be loaded here -->
+                </ul>
+            </div>
+
+            <div class="col-md-6">
+                <h3>Temperature Data</h3>
+                <canvas id="tempChart"></canvas>
+            </div>
+        </div>
+
+        <div class="text-center mt-4">
+            <button id="refreshData" class="btn btn-primary">Refresh Data</button>
+        </div>
+    </div>
+</body>
+
+</html>
